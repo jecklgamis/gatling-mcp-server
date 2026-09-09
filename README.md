@@ -127,6 +127,12 @@ python -m client.gatling_client
 LLM_PROVIDER=openai python -m client.gatling_client
 ```
 
+Or use the `run-agent.sh` shortcut, which just wraps the command above:
+
+```bash
+./run-agent.sh
+```
+
 Example queries once the REPL is up:
 
 ```
