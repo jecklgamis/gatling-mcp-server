@@ -48,10 +48,12 @@ Makefile                  — Build and run shortcuts
 
 ### Configuration
 
-| Env Var                   | Description                                    | Default                 |
-|----------------------------|-------------------------------------------------|--------------------------|
-| `GATLING_SERVER_URL`       | Base URL of the gatling-server instance          | `http://localhost:58080` |
-| `GATLING_SERVER_API_TOKEN` | Bearer token for gatling-server's `/task/*` API  | `default`                |
+| Env Var                       | Description                                                   | Default                  |
+|--------------------------------|-----------------------------------------------------------------|----------------------------|
+| `GATLING_SERVER_URL`           | Base URL of the gatling-server instance                        | `http://localhost:58080` |
+| `GATLING_SERVER_API_TOKEN`     | Bearer token for gatling-server's `/task/*` API                | `default`                |
+| `GATLING_MCP_REQUEST_TIMEOUT`  | Timeout (seconds) for lightweight calls (submit/status/logs/abort) | `30`                  |
+| `GATLING_MCP_UPLOAD_TIMEOUT`   | Timeout (seconds) for `upload_jar`, which can move tens of MB  | `300`                    |
 
 ### Run Locally
 
@@ -102,6 +104,35 @@ Query: upload target/gatling-scala-example.jar and run gatling.test.example.simu
 Query: what's the status of the task you just submitted?
 Query: it failed - show me the console log and tell me why
 ```
+
+### Local vs. Remote Deployment
+
+`upload_jar` and `submit_task` have different locality requirements, because only one of them actually moves file
+bytes through this server:
+
+- **`submit_task`** just hands gatling-server a URL (`http://...`, `https://...`, or `s3://...`) and gatling-server
+  downloads it directly, server-side, subject to its own `taskSubmit.allowedHttpHosts`/S3-bucket allowlists. No jar
+  bytes ever pass through gatling-mcp-server or the MCP client. If your jar already has a URL (published by CI to
+  S3, an artifact repo, etc.), gatling-mcp-server can run anywhere - a shared team instance, a remote host, a
+  container - with no locality constraint at all.
+
+- **`upload_jar`** takes a `file_path` argument, which is just a string passed over MCP - the file's *bytes* are
+  never sent over the MCP protocol. gatling-mcp-server opens that path **on its own local disk** and streams the
+  bytes to gatling-server's `/upload` endpoint itself. That means `file_path` must be resolvable from wherever the
+  **gatling-mcp-server process** runs, not from wherever the MCP client (Claude, an IDE, etc.) happens to be
+  running. If gatling-mcp-server is remote and your jar only exists as a local build artifact you haven't published
+  anywhere, `upload_jar` will simply fail with "no such file."
+
+**Practical guidance:**
+
+- Building and testing locally (the common case today): run gatling-mcp-server **on the same machine** where you
+  build the jar (e.g. alongside `gatling-scala-example`/`gatling-java-example`), and use `upload_jar` with an
+  absolute path to the build output. This is what the setup in this repo's examples assumes.
+- Sharing one gatling-mcp-server across a team, or driving it from a hosted/remote MCP client: either always
+  publish jars to a URL first (S3, CI artifacts, gatling-server's own `/uploads/` via a direct `curl`) and use
+  `submit_task` alone, or accept that `upload_jar` only works for whoever is colocated with that gatling-mcp-server
+  instance. Making `upload_jar` accept file bytes/base64 over MCP instead of a local path (removing the locality
+  requirement entirely) is a possible future enhancement, not implemented today.
 
 ### Run with Docker
 
