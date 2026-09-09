@@ -27,6 +27,7 @@ Sibling projects:
 - `requirements.txt` — pinned Python dependencies
 - `Dockerfile` — container image definition (port 58090)
 - `.github/workflows/build.yaml` — CI/CD pipeline (test, build, Docker push)
+- `.github/workflows/release.yaml` — creates a GitHub Release on `v*` tag pushes
 
 ## Configuration
 

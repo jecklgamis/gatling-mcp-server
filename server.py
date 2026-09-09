@@ -85,4 +85,4 @@ for tool_fn in gatling_tools:
 app.mount("/gatling_mcp", gatling_mcp_app)
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=58090)
+    uvicorn.run(app, host="0.0.0.0", port=58090, ws="websockets-sansio")
