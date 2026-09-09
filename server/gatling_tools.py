@@ -1,8 +1,11 @@
+import logging
 import os
 from pathlib import Path
 
 import httpx
 from fastmcp import FastMCP
+
+logger = logging.getLogger("gatling_mcp_server")
 
 mcp = FastMCP("Gatling Server", instructions="Submit, monitor and inspect Gatling load test runs on gatling-server.")
 
@@ -28,6 +31,16 @@ def _network_error(action: str, exc: Exception) -> dict:
     return {"error": f"{action} failed: {exc.__class__.__name__}: {exc}"}
 
 
+def _upstream_error(action: str, resp: httpx.Response) -> dict:
+    logger.error("%s failed with status %s: %s", action, resp.status_code, resp.text)
+    return {"error": f"{action} failed with status {resp.status_code}"}
+
+
+def _upstream_error_str(action: str, resp: httpx.Response) -> str:
+    logger.error("%s failed with status %s: %s", action, resp.status_code, resp.text)
+    return f"error: {action} failed with status {resp.status_code}"
+
+
 async def _upload_jar(file_path: str) -> dict:
     """Upload a jar file to gatling-server, returning an id that can be used
     to build a URL for submit_task's jar_url argument
@@ -46,7 +59,7 @@ async def _upload_jar(file_path: str) -> dict:
     except httpx.HTTPError as exc:
         return _network_error("upload", exc)
     if resp.status_code != 200:
-        return {"error": f"upload failed with status {resp.status_code}", "body": resp.text}
+        return _upstream_error("upload", resp)
     body = resp.json()
     body["url"] = f"{GATLING_SERVER_URL}/uploads/{body['id']}/{path.name}"
     return body
@@ -72,7 +85,7 @@ async def _submit_task(simulation: str, jar_url: str, java_opts: str = "") -> di
     except httpx.HTTPError as exc:
         return _network_error("submit", exc)
     if resp.status_code != 200:
-        return {"error": f"submit failed with status {resp.status_code}", "body": resp.text}
+        return _upstream_error("submit", resp)
     return resp.json()
 
 
@@ -88,7 +101,7 @@ async def _get_task_status(task_id: str) -> dict:
     except httpx.HTTPError as exc:
         return _network_error("status check", exc)
     if resp.status_code != 200:
-        return {"error": f"status check failed with status {resp.status_code}", "body": resp.text}
+        return _upstream_error("status check", resp)
     return resp.json()
 
 
@@ -105,7 +118,7 @@ async def _get_console_log(task_id: str) -> str:
     except httpx.HTTPError as exc:
         return f"error: console log fetch failed: {exc.__class__.__name__}: {exc}"
     if resp.status_code != 200:
-        return f"error: console log fetch failed with status {resp.status_code}: {resp.text}"
+        return _upstream_error_str("console log fetch", resp)
     return resp.text
 
 
@@ -122,7 +135,7 @@ async def _get_simulation_log(task_id: str) -> str:
     except httpx.HTTPError as exc:
         return f"error: simulation log fetch failed: {exc.__class__.__name__}: {exc}"
     if resp.status_code != 200:
-        return f"error: simulation log fetch failed with status {resp.status_code}: {resp.text}"
+        return _upstream_error_str("simulation log fetch", resp)
     return resp.text
 
 
@@ -138,7 +151,7 @@ async def _abort_task(task_id: str) -> dict:
     except httpx.HTTPError as exc:
         return _network_error("abort", exc)
     if resp.status_code != 200:
-        return {"error": f"abort failed with status {resp.status_code}", "body": resp.text}
+        return _upstream_error("abort", resp)
     return {"ok": True}
 
 

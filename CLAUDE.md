@@ -32,6 +32,8 @@ Sibling projects:
 
 - `GATLING_SERVER_URL` (default `http://localhost:58080`) - base URL of the gatling-server instance to call.
 - `GATLING_SERVER_API_TOKEN` (default `default`) - bearer token for gatling-server's `/task/*` endpoints.
+- `GATLING_MCP_API_TOKEN` (default `default`) - bearer token required on every request to this server itself (MCP
+  and REST). Logs a startup warning if left at the default - always set explicitly beyond localhost.
 
 ## Running
 

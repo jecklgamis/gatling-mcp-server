@@ -16,9 +16,12 @@ without anyone hand-writing curl.
 | `get_simulation_log` | Get Gatling's own simulation report for a completed task (see caveat below)          |
 | `abort_task`         | Kill a currently running task                                                        |
 
-Every tool is also mounted as a plain `GET` REST route with the same name and arguments (e.g. `GET /submit_task?
-simulation=...&jar_url=...`), matching gatling-server's own `/task/*` shape - useful for testing without an LLM in
-the loop.
+Every tool is also mounted as a plain REST route with the same name and arguments - `GET` for read-only tools
+(`get_task_status`, `get_console_log`, `get_simulation_log`), `POST` for anything that mutates state
+(`upload_jar`, `submit_task`, `abort_task`, e.g. `POST /submit_task?simulation=...&jar_url=...`) so those can't be
+triggered by a bare link/image tag. Useful for testing without an LLM in the loop.
+
+All routes - MCP and REST alike - require the `Authorization: Bearer <GATLING_MCP_API_TOKEN>` header described below.
 
 **Caveat:** `get_simulation_log` returns whatever `gatling-server`'s `/task/simulationLog/{taskId}` hands back. On
 recent Gatling versions that file is a binary format, not the classic text log - `get_console_log` is the more
@@ -49,8 +52,14 @@ Makefile                  — Build and run shortcuts
 |--------------------------------|-----------------------------------------------------------------|----------------------------|
 | `GATLING_SERVER_URL`           | Base URL of the gatling-server instance                        | `http://localhost:58080` |
 | `GATLING_SERVER_API_TOKEN`     | Bearer token for gatling-server's `/task/*` API                | `default`                |
+| `GATLING_MCP_API_TOKEN`        | Bearer token required on every request to **this** server (MCP and REST alike) | `default` |
 | `GATLING_MCP_REQUEST_TIMEOUT`  | Timeout (seconds) for lightweight calls (submit/status/logs/abort) | `30`                  |
 | `GATLING_MCP_UPLOAD_TIMEOUT`   | Timeout (seconds) for `upload_jar`, which can move tens of MB  | `300`                    |
+
+`GATLING_MCP_API_TOKEN` defaults to `"default"` for local dev convenience, but the server logs a warning on startup
+if it's left unset - **always set it explicitly before running this anywhere reachable beyond localhost.** Without
+it, anyone who can reach this server can invoke any tool using the credentials baked into its own environment,
+including `upload_jar` with an arbitrary local `file_path`.
 
 ### Run Locally
 
@@ -74,7 +83,8 @@ Once the server is running, register it as a project-scoped MCP server in any re
 
 ```bash
 cd /path/to/gatling-scala-example
-claude mcp add --transport http gatling http://localhost:58090/gatling_mcp -s project
+claude mcp add --transport http gatling http://localhost:58090/gatling_mcp -s project \
+  -H "Authorization: Bearer \${GATLING_MCP_API_TOKEN}"
 ```
 
 This writes a `.mcp.json` in that repo:
@@ -84,15 +94,19 @@ This writes a `.mcp.json` in that repo:
   "mcpServers": {
     "gatling": {
       "type": "http",
-      "url": "http://localhost:58090/gatling_mcp"
+      "url": "http://localhost:58090/gatling_mcp",
+      "headers": {
+        "Authorization": "Bearer ${GATLING_MCP_API_TOKEN}"
+      }
     }
   }
 }
 ```
 
-`.mcp.json` contains no secrets (auth to gatling-server is handled server-side by gatling-mcp-server via
-`GATLING_SERVER_API_TOKEN`), so it's safe to commit and share with the team - anyone who opens Claude Code in that
-repo is prompted to trust/enable the `gatling` server automatically. Run `claude mcp list` to confirm it connects.
+`${GATLING_MCP_API_TOKEN}` is expanded from your own shell environment at connect time, not stored literally - so
+`.mcp.json` itself contains no secret and is safe to commit and share with the team. Whoever opens Claude Code in
+that repo just needs `GATLING_MCP_API_TOKEN` set in their own environment; they're then prompted to trust/enable the
+`gatling` server automatically. Run `claude mcp list` to confirm it connects.
 
 Omit `-s project` (or use `-s user`) to register it in your personal config instead, if you'd rather it be available
 across every project rather than shared via the repo.
@@ -148,5 +162,23 @@ docker run -p 58090:58090 -e GATLING_SERVER_URL=http://host.docker.internal:5808
 
 ## CI/CD
 
-The GitHub Actions [workflow](.github/workflows/build.yaml) runs tests on pushes to `main` and on pull requests,
-and pushes a Docker image to Docker Hub on non-PR events.
+Two workflows:
+
+- [`build.yaml`](.github/workflows/build.yaml) - runs tests on every push to `main`, on pull requests, and on `v*`
+  tag pushes. On `main` and tag pushes (not PRs) it also builds and pushes a Docker image to both Docker Hub
+  (`jecklgamis/gatling-mcp-server`) and GHCR (`ghcr.io/jecklgamis/gatling-mcp-server`): `main` pushes update the
+  `:latest` tag, and `v*` tag pushes produce immutable semver tags (`v1.2.3` -> `1.2.3` and `1.2`) instead of a
+  floating branch tag.
+- [`release.yaml`](.github/workflows/release.yaml) - fires on the same `v*` tag pushes and creates a GitHub Release
+  with auto-generated notes (`gh release create --generate-notes`), marked as a pre-release if the tag contains a
+  hyphen (e.g. `v1.0.0-rc.1`).
+
+### Cutting a release
+
+```bash
+git tag v1.2.3
+git push origin v1.2.3
+```
+
+That single tag push is enough - `build.yaml` builds and pushes the versioned image, and `release.yaml` creates the
+GitHub Release page with notes, in parallel.
