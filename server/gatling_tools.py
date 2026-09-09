@@ -11,9 +11,21 @@ GATLING_SERVER_API_TOKEN = os.environ.get("GATLING_SERVER_API_TOKEN", "default")
 
 _AUTH_HEADER = {"Authorization": f"Bearer {GATLING_SERVER_API_TOKEN}"}
 
+# Most calls (submit/status/logs/abort) are small and fast; jar uploads can be
+# tens of MB and take much longer, especially over a slow uplink to a remote
+# gatling-server - 30s was measured to be nowhere near enough for a 50MB jar
+# on an ordinary connection (it took ~100s), so uploads get their own, much
+# longer budget.
+REQUEST_TIMEOUT = float(os.environ.get("GATLING_MCP_REQUEST_TIMEOUT", "30"))
+UPLOAD_TIMEOUT = float(os.environ.get("GATLING_MCP_UPLOAD_TIMEOUT", "300"))
 
-def _client() -> httpx.AsyncClient:
-    return httpx.AsyncClient(base_url=GATLING_SERVER_URL, headers=_AUTH_HEADER, timeout=30)
+
+def _client(timeout: float = REQUEST_TIMEOUT) -> httpx.AsyncClient:
+    return httpx.AsyncClient(base_url=GATLING_SERVER_URL, headers=_AUTH_HEADER, timeout=timeout)
+
+
+def _network_error(action: str, exc: Exception) -> dict:
+    return {"error": f"{action} failed: {exc.__class__.__name__}: {exc}"}
 
 
 async def _upload_jar(file_path: str) -> dict:
@@ -27,14 +39,17 @@ async def _upload_jar(file_path: str) -> dict:
     path = Path(file_path)
     if not path.is_file():
         return {"error": f"no such file: {file_path}"}
-    async with _client() as client:
-        with path.open("rb") as f:
-            resp = await client.post("/upload", files={"file": (path.name, f, "application/octet-stream")})
-        if resp.status_code != 200:
-            return {"error": f"upload failed with status {resp.status_code}", "body": resp.text}
-        body = resp.json()
-        body["url"] = f"{GATLING_SERVER_URL}/uploads/{body['id']}/{path.name}"
-        return body
+    try:
+        async with _client(timeout=UPLOAD_TIMEOUT) as client:
+            with path.open("rb") as f:
+                resp = await client.post("/upload", files={"file": (path.name, f, "application/octet-stream")})
+    except httpx.HTTPError as exc:
+        return _network_error("upload", exc)
+    if resp.status_code != 200:
+        return {"error": f"upload failed with status {resp.status_code}", "body": resp.text}
+    body = resp.json()
+    body["url"] = f"{GATLING_SERVER_URL}/uploads/{body['id']}/{path.name}"
+    return body
 
 
 async def _submit_task(simulation: str, jar_url: str, java_opts: str = "") -> dict:
@@ -48,14 +63,17 @@ async def _submit_task(simulation: str, jar_url: str, java_opts: str = "") -> di
         java_opts: Space-separated JVM system properties/flags for the run
             (e.g. "-DbaseUrl=http://example.com -DdurationMin=1 -DrequestPerSecond=10").
     """
-    async with _client() as client:
-        resp = await client.post(
-            "/task/submit",
-            json={"simulation": simulation, "javaOpts": java_opts, "url": jar_url},
-        )
-        if resp.status_code != 200:
-            return {"error": f"submit failed with status {resp.status_code}", "body": resp.text}
-        return resp.json()
+    try:
+        async with _client() as client:
+            resp = await client.post(
+                "/task/submit",
+                json={"simulation": simulation, "javaOpts": java_opts, "url": jar_url},
+            )
+    except httpx.HTTPError as exc:
+        return _network_error("submit", exc)
+    if resp.status_code != 200:
+        return {"error": f"submit failed with status {resp.status_code}", "body": resp.text}
+    return resp.json()
 
 
 async def _get_task_status(task_id: str) -> dict:
@@ -64,11 +82,14 @@ async def _get_task_status(task_id: str) -> dict:
     Args:
         task_id: The task id returned by submit_task.
     """
-    async with _client() as client:
-        resp = await client.get(f"/task/{task_id}")
-        if resp.status_code != 200:
-            return {"error": f"status check failed with status {resp.status_code}", "body": resp.text}
-        return resp.json()
+    try:
+        async with _client() as client:
+            resp = await client.get(f"/task/{task_id}")
+    except httpx.HTTPError as exc:
+        return _network_error("status check", exc)
+    if resp.status_code != 200:
+        return {"error": f"status check failed with status {resp.status_code}", "body": resp.text}
+    return resp.json()
 
 
 async def _get_console_log(task_id: str) -> str:
@@ -78,11 +99,14 @@ async def _get_console_log(task_id: str) -> str:
     Args:
         task_id: The task id returned by submit_task.
     """
-    async with _client() as client:
-        resp = await client.get(f"/task/console/{task_id}")
-        if resp.status_code != 200:
-            return f"error: console log fetch failed with status {resp.status_code}: {resp.text}"
-        return resp.text
+    try:
+        async with _client() as client:
+            resp = await client.get(f"/task/console/{task_id}")
+    except httpx.HTTPError as exc:
+        return f"error: console log fetch failed: {exc.__class__.__name__}: {exc}"
+    if resp.status_code != 200:
+        return f"error: console log fetch failed with status {resp.status_code}: {resp.text}"
+    return resp.text
 
 
 async def _get_simulation_log(task_id: str) -> str:
@@ -92,11 +116,14 @@ async def _get_simulation_log(task_id: str) -> str:
     Args:
         task_id: The task id returned by submit_task.
     """
-    async with _client() as client:
-        resp = await client.get(f"/task/simulationLog/{task_id}")
-        if resp.status_code != 200:
-            return f"error: simulation log fetch failed with status {resp.status_code}: {resp.text}"
-        return resp.text
+    try:
+        async with _client() as client:
+            resp = await client.get(f"/task/simulationLog/{task_id}")
+    except httpx.HTTPError as exc:
+        return f"error: simulation log fetch failed: {exc.__class__.__name__}: {exc}"
+    if resp.status_code != 200:
+        return f"error: simulation log fetch failed with status {resp.status_code}: {resp.text}"
+    return resp.text
 
 
 async def _abort_task(task_id: str) -> dict:
@@ -105,11 +132,14 @@ async def _abort_task(task_id: str) -> dict:
     Args:
         task_id: The task id returned by submit_task.
     """
-    async with _client() as client:
-        resp = await client.post(f"/task/abort/{task_id}")
-        if resp.status_code != 200:
-            return {"error": f"abort failed with status {resp.status_code}", "body": resp.text}
-        return {"ok": True}
+    try:
+        async with _client() as client:
+            resp = await client.post(f"/task/abort/{task_id}")
+    except httpx.HTTPError as exc:
+        return _network_error("abort", exc)
+    if resp.status_code != 200:
+        return {"error": f"abort failed with status {resp.status_code}", "body": resp.text}
+    return {"ok": True}
 
 
 mcp.tool()(_upload_jar)

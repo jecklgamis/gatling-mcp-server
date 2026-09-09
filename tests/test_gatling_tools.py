@@ -1,3 +1,4 @@
+import httpx
 import respx
 from httpx import Response
 
@@ -108,3 +109,35 @@ async def test_abort_task_failure():
     result = await _abort_task("task-1")
 
     assert "error" in result
+
+
+@respx.mock
+async def test_upload_jar_timeout_returns_error_instead_of_raising(tmp_path):
+    jar = tmp_path / "example.jar"
+    jar.write_bytes(b"fake-jar-content")
+    respx.post(f"{GATLING_SERVER_URL}/upload").mock(side_effect=httpx.ConnectTimeout("timed out"))
+
+    result = await _upload_jar(str(jar))
+
+    assert "error" in result
+    assert "ConnectTimeout" in result["error"]
+
+
+@respx.mock
+async def test_submit_task_connection_error_returns_error_instead_of_raising():
+    respx.post(f"{GATLING_SERVER_URL}/task/submit").mock(side_effect=httpx.ConnectError("refused"))
+
+    result = await _submit_task("com.example.SomeSimulation", "http://localhost:58080/uploads/x/x.jar")
+
+    assert "error" in result
+    assert "ConnectError" in result["error"]
+
+
+@respx.mock
+async def test_get_console_log_network_error_returns_error_string_instead_of_raising():
+    respx.get(f"{GATLING_SERVER_URL}/task/console/task-1").mock(side_effect=httpx.ReadTimeout("timed out"))
+
+    result = await _get_console_log("task-1")
+
+    assert result.startswith("error:")
+    assert "ReadTimeout" in result
