@@ -1,5 +1,7 @@
 # gatling-mcp-server
 
+[![Build](https://github.com/jecklgamis/gatling-mcp-server/actions/workflows/build.yaml/badge.svg)](https://github.com/jecklgamis/gatling-mcp-server/actions/workflows/build.yaml)
+
 A FastAPI MCP (Model Context Protocol) server built with [FastMCP](https://github.com/jlowin/fastmcp). Exposes
 [gatling-server](https://github.com/jecklgamis/gatling-server)'s task API as MCP tools over streamable-http
 transport, so an AI agent can upload a jar, submit a Gatling simulation, poll its status, and pull back logs -
