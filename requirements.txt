@@ -3,6 +3,6 @@ uvicorn==0.41.0
 fastmcp==3.1.1
 httpx==0.28.1
 mcp==1.26.0
-pytest==8.4.1
+pytest==9.0.3
 pytest-asyncio==1.2.0
 respx==0.22.0
