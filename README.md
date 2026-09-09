@@ -68,6 +68,10 @@ pip install -r requirements.txt
 python server.py
 ```
 
+Or use `./run-server.sh`, which sets the same defaults shown in the table above for any of these env vars you
+haven't already set yourself (`GATLING_SERVER_URL`, `GATLING_SERVER_API_TOKEN`, `GATLING_MCP_API_TOKEN`,
+`GATLING_MCP_REQUEST_TIMEOUT`, `GATLING_MCP_UPLOAD_TIMEOUT`) before starting the server.
+
 The server starts on `http://localhost:58090` with:
 - Root endpoint at `/` listing available endpoints
 - Gatling MCP endpoint at `/gatling_mcp` (streamable-http transport)
