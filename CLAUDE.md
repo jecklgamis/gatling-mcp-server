@@ -4,7 +4,8 @@
 
 This is a FastAPI MCP (Model Context Protocol) server built with FastMCP. It exposes gatling-server's task API
 (upload jar, submit simulation, poll status, fetch logs, abort) as MCP tools over streamable-http transport on port
-58090. Includes a LangChain-based client for interacting with the server via an LLM agent.
+58090. Intended to be used from an existing MCP client (Claude Code, Claude.ai, Cursor, etc.) rather than a bespoke
+client of its own.
 
 Sibling projects:
 - `../gatling-server` — the Go server this project talks to (its REST API is the thing being wrapped).
@@ -16,16 +17,12 @@ Sibling projects:
 - FastMCP
 - FastAPI / Uvicorn
 - httpx (calling gatling-server)
-- LangChain / LangGraph (client)
-- langchain-mcp-adapters (client)
 - pytest + pytest-asyncio + respx (tests)
 
 ## Project Structure
 
 - `server.py` — FastAPI app entry point with REST routes and MCP mount
 - `server/gatling_tools.py` — tool definitions; each tool calls gatling-server's HTTP API via httpx
-- `client/gatling_client.py` — LangChain agent client for the gatling MCP
-- `client/llm_factory.py` — LLM provider factory (ollama, openai, gemini, openrouter)
 - `tests/test_gatling_tools.py` — tests for the tool functions, gatling-server calls mocked via respx
 - `requirements.txt` — pinned Python dependencies
 - `Dockerfile` — container image definition (port 58090)

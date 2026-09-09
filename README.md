@@ -30,9 +30,6 @@ reliable source for diagnosing a run from an AI agent today.
 server.py                — FastAPI app entry point with REST routes and MCP mount
 server/                  — MCP server definitions
   gatling_tools.py       — Gatling MCP server: tool definitions, calls gatling-server's HTTP API
-client/                  — LangChain agent client
-  gatling_client.py      — Interactive LangChain agent client
-  llm_factory.py         — LLM provider factory (ollama, openai, gemini, openrouter)
 tests/                   — pytest tests for the tool functions (gatling-server calls mocked via respx)
 requirements.txt         — Python dependencies
 Dockerfile                — Container image definition
@@ -99,48 +96,6 @@ repo is prompted to trust/enable the `gatling` server automatically. Run `claude
 
 Omit `-s project` (or use `-s user`) to register it in your personal config instead, if you'd rather it be available
 across every project rather than shared via the repo.
-
-### Run Client
-
-The client uses a LangChain agent to interact with the MCP server via an interactive REPL. Configure the LLM
-provider via the `LLM_PROVIDER` env var and the server URL via `MCP_SERVER_URL`.
-
-| Env Var          | Description         | Default                  |
-|-------------------|----------------------|----------------------------|
-| `LLM_PROVIDER`    | LLM provider to use  | `ollama`                   |
-| `MCP_SERVER_URL`  | MCP server base URL  | `http://localhost:58090`   |
-
-Supported LLM providers:
-
-| Provider     | Model              |
-|---------------|--------------------|
-| `ollama`      | `llama3.2`         |
-| `openai`      | `gpt-4.1-nano`     |
-| `gemini`      | `gemini-2.5-flash` |
-| `openrouter`  | `openrouter/free`  |
-
-```bash
-python -m client.gatling_client
-```
-
-```bash
-LLM_PROVIDER=openai python -m client.gatling_client
-```
-
-Or use the `run-agent.sh` shortcut, which just wraps the command above:
-
-```bash
-./run-agent.sh
-```
-
-Example queries once the REPL is up:
-
-```
-Query: upload target/gatling-scala-example.jar and run gatling.test.example.simulation.ExampleSimulation
-       against http://localhost:8080 for 1 minute at 10 requests per second
-Query: what's the status of the task you just submitted?
-Query: it failed - show me the console log and tell me why
-```
 
 ### Local vs. Remote Deployment
 
