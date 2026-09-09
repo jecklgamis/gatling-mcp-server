@@ -1,7 +1,7 @@
 import asyncio
 import os
 
-from langgraph.prebuilt import create_react_agent
+from langchain.agents import create_agent
 from langchain_mcp_adapters.tools import load_mcp_tools
 from client.llm_factory import create_llm
 from mcp import ClientSession
@@ -16,7 +16,7 @@ async def main():
             await session.initialize()
             tools = await load_mcp_tools(session)
             llm = create_llm(provider)
-            agent = create_react_agent(llm, tools)
+            agent = create_agent(llm, tools)
             print("MCP Gatling Client (type 'quit' to exit)")
             while True:
                 try:
