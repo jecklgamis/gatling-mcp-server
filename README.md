@@ -69,6 +69,37 @@ The server starts on `http://localhost:58090` with:
   `/get_simulation_log`, `/abort_task`
 - API docs at `/docs`
 
+### Connect from Claude Code
+
+Once the server is running, register it as a project-scoped MCP server in any repo you work from (e.g.
+[gatling-scala-example](https://github.com/jecklgamis/gatling-scala-example) or
+[gatling-java-example](https://github.com/jecklgamis/gatling-java-example)):
+
+```bash
+cd /path/to/gatling-scala-example
+claude mcp add --transport http gatling http://localhost:58090/gatling_mcp -s project
+```
+
+This writes a `.mcp.json` in that repo:
+
+```json
+{
+  "mcpServers": {
+    "gatling": {
+      "type": "http",
+      "url": "http://localhost:58090/gatling_mcp"
+    }
+  }
+}
+```
+
+`.mcp.json` contains no secrets (auth to gatling-server is handled server-side by gatling-mcp-server via
+`GATLING_SERVER_API_TOKEN`), so it's safe to commit and share with the team - anyone who opens Claude Code in that
+repo is prompted to trust/enable the `gatling` server automatically. Run `claude mcp list` to confirm it connects.
+
+Omit `-s project` (or use `-s user`) to register it in your personal config instead, if you'd rather it be available
+across every project rather than shared via the repo.
+
 ### Run Client
 
 The client uses a LangChain agent to interact with the MCP server via an interactive REPL. Configure the LLM
