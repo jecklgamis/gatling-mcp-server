@@ -142,11 +142,11 @@ async def _abort_task(task_id: str) -> dict:
     return {"ok": True}
 
 
-mcp.tool()(_upload_jar)
-mcp.tool()(_submit_task)
-mcp.tool()(_get_task_status)
-mcp.tool()(_get_console_log)
-mcp.tool()(_get_simulation_log)
-mcp.tool()(_abort_task)
+mcp.tool(name="upload_jar")(_upload_jar)
+mcp.tool(name="submit_task")(_submit_task)
+mcp.tool(name="get_task_status")(_get_task_status)
+mcp.tool(name="get_console_log")(_get_console_log)
+mcp.tool(name="get_simulation_log")(_get_simulation_log)
+mcp.tool(name="abort_task")(_abort_task)
 
 gatling_tools = [_upload_jar, _submit_task, _get_task_status, _get_console_log, _get_simulation_log, _abort_task]
