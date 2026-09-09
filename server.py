@@ -1,3 +1,4 @@
+import hmac
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -11,6 +12,7 @@ from server.gatling_tools import gatling_tools, mcp
 logger = logging.getLogger("gatling_mcp_server")
 
 GATLING_MCP_API_TOKEN = os.environ.get("GATLING_MCP_API_TOKEN", "default")
+_EXPECTED_AUTH_HEADER = f"Bearer {GATLING_MCP_API_TOKEN}".encode()
 if GATLING_MCP_API_TOKEN == "default":
     logger.warning(
         "GATLING_MCP_API_TOKEN is unset - using the insecure default token. "
@@ -51,8 +53,8 @@ class BearerAuthMiddleware:
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
         headers = dict(scope["headers"])
-        auth = headers.get(b"authorization", b"").decode("latin-1")
-        if auth != f"Bearer {GATLING_MCP_API_TOKEN}":
+        auth = headers.get(b"authorization", b"")
+        if not hmac.compare_digest(auth, _EXPECTED_AUTH_HEADER):
             response = JSONResponse({"error": "unauthorized"}, status_code=401)
             return await response(scope, receive, send)
         return await self.app(scope, receive, send)
