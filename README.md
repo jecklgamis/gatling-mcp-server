@@ -56,26 +56,11 @@ docker run -p 58090:58090 -e GATLING_SERVER_URL=http://host.docker.internal:5808
 
 ### Install from a GitHub Release
 
-Each `v*` release publishes a wheel/sdist as release artifacts (see [Cutting a release](#cutting-a-release) below).
-Install the wheel directly from a release without cloning the repo:
-
 ```bash
 pip install https://github.com/jecklgamis/gatling-mcp-server/releases/download/v1.2.3/gatling_mcp_server-1.2.3-py3-none-any.whl
-```
-
-This installs a `gatling-mcp-server` command on your `PATH`:
-
-```bash
 export GATLING_MCP_API_TOKEN=... GATLING_SERVER_URL=... GATLING_SERVER_API_TOKEN=...
 gatling-mcp-server
 ```
-
-The server starts on `http://localhost:58090` with:
-- Root endpoint at `/` listing available endpoints
-- Gatling MCP endpoint at `/gatling_mcp` (streamable-http transport)
-- REST API endpoints at `/upload_jar`, `/submit_task`, `/get_task_status`, `/get_console_log`,
-  `/get_simulation_log`, `/abort_task`
-- API docs at `/docs`
 
 ### Connect from Claude Code
 
