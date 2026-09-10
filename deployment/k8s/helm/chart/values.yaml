@@ -1,0 +1,116 @@
+# Default values for gatling-mcp-server.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: jecklgamis/gatling-mcp-server
+  # image.tag defaults to a mutable tag ("main"), so IfNotPresent would let a
+  # node keep serving a stale cached image after a new push under the same
+  # tag - use a pinned/immutable tag (e.g. a release tag or commit SHA) if
+  # you want to go back to IfNotPresent.
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "main"
+
+# jecklgamis/gatling-mcp-server is a public image; only set this if you're
+# pointing image.repository at a private registry/fork.
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Base URL of the gatling-server instance this server talks to. Defaults to
+# the in-cluster Service name/port a sibling `helm install gatling-server`
+# release from ../gatling-server/deployment/k8s/helm produces - change it if
+# gatling-server lives elsewhere (a different namespace, or outside the
+# cluster entirely).
+gatlingServerUrl: "http://gatling-server"
+
+# GATLING_MCP_API_TOKEN gates every request to this server (MCP and REST
+# alike). GATLING_SERVER_API_TOKEN authenticates this server to
+# gatling-server's /task/* API - it must match that deployment's own
+# apiToken. Both default to "default", matching the app's own built-in
+# fallback, so this works out of the box but should be overridden for
+# anything beyond a quick trial. Set existingSecretName instead to source
+# both from a Secret you manage yourself (must contain data/stringData keys
+# named GATLING_MCP_API_TOKEN and GATLING_SERVER_API_TOKEN) without putting
+# them in values.yaml/git.
+gatlingMcpApiToken: "default"
+gatlingServerApiToken: "default"
+existingSecretName: ""
+
+# Timeouts (seconds) passed straight through to the app; see README.md.
+requestTimeout: 30
+uploadTimeout: 300
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # runAsNonRoot: true
+  # runAsUser: 10001
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 10001
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+  hosts:
+    - host: gatling-mcp-server.jecklgamis.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: gatling-mcp-server-tls
+      hosts:
+        - gatling-mcp-server.jecklgamis.com
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

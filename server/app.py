@@ -31,6 +31,10 @@ if GATLING_MCP_API_TOKEN == "default":
 # in the URL.
 _READ_ONLY_TOOLS = {"get_task_status", "get_console_log", "get_simulation_log"}
 
+# Unauthenticated so k8s (or any other) liveness/readiness probe can hit it
+# without a token.
+_PUBLIC_PATHS = {"/healthz"}
+
 gatling_mcp_app = mcp.http_app(path="/")
 
 
@@ -56,7 +60,7 @@ class BearerAuthMiddleware:
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] != "http":
+        if scope["type"] != "http" or scope["path"] in _PUBLIC_PATHS:
             return await self.app(scope, receive, send)
         headers = dict(scope["headers"])
         auth = headers.get(b"authorization", b"")
@@ -67,6 +71,12 @@ class BearerAuthMiddleware:
 
 
 app.add_middleware(BearerAuthMiddleware)
+
+
+@app.get("/healthz")
+async def healthz():
+    """Unauthenticated liveness/readiness probe target."""
+    return {"status": "ok"}
 
 
 @app.get("/")

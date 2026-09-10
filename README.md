@@ -58,6 +58,22 @@ docker run -p 58090:58090 --add-host=host.docker.internal:host-gateway \
 `--add-host` is required on Linux for `host.docker.internal` to resolve; Docker Desktop (Mac/Windows) provides it
 automatically and the flag is a harmless no-op there.
 
+### Deploy to Kubernetes
+
+A Helm chart is at [`deployment/k8s/helm`](deployment/k8s/helm), mirroring
+[gatling-server](https://github.com/jecklgamis/gatling-server)'s chart at `deployment/k8s/helm`:
+
+```bash
+cd deployment/k8s/helm
+helm install gatling-mcp-server ./chart \
+  --set gatlingMcpApiToken=<token> \
+  --set gatlingServerApiToken=<token>
+```
+
+By default it deploys behind an nginx Ingress with cert-manager TLS at `gatling-mcp-server.jecklgamis.com`, and
+points `GATLING_SERVER_URL` at `http://gatling-server` (the in-cluster Service name a sibling `gatling-server` Helm
+release produces) - override `gatlingServerUrl` if that instance lives elsewhere. See `values.yaml` for all options.
+
 ### Install from a GitHub Release
 
 ```bash

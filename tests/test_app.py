@@ -16,6 +16,14 @@ def _client() -> httpx.AsyncClient:
     return httpx.AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver")
 
 
+async def test_healthz_does_not_require_auth():
+    async with _client() as client:
+        resp = await client.get("/healthz")
+
+    assert resp.status_code == 200
+    assert resp.json() == {"status": "ok"}
+
+
 async def test_root_requires_auth():
     async with _client() as client:
         resp = await client.get("/")
