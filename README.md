@@ -74,6 +74,15 @@ By default it deploys behind an nginx Ingress with cert-manager TLS at `gatling-
 points `GATLING_SERVER_URL` at `http://gatling-server` (the in-cluster Service name a sibling `gatling-server` Helm
 release produces) - override `gatlingServerUrl` if that instance lives elsewhere. See `values.yaml` for all options.
 
+Each `v*` release also packages and attaches the chart as a release artifact, so you can install it directly
+without cloning:
+
+```bash
+helm install gatling-mcp-server https://github.com/jecklgamis/gatling-mcp-server/releases/download/v1.2.3/gatling-mcp-server-1.2.3.tgz \
+  --set gatlingMcpApiToken=<token> \
+  --set gatlingServerApiToken=<token>
+```
+
 ### Install from a GitHub Release
 
 ```bash
