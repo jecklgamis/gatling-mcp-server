@@ -102,7 +102,14 @@ app.mount("/gatling_mcp", gatling_mcp_app)
 
 
 def main():
-    uvicorn.run(app, host="0.0.0.0", port=58090, ws="websockets-sansio")
+    # forwarded_allow_ips="*" - trust X-Forwarded-Proto/X-Forwarded-For from
+    # whoever connects, so redirects (e.g. the mounted MCP app's trailing-
+    # slash redirect) come back as https:// behind a TLS-terminating reverse
+    # proxy (e.g. an ingress controller) instead of downgrading to http://,
+    # which drops the Authorization header on the client's next hop. Safe
+    # here because the pod is only reachable through that proxy, never
+    # directly from an untrusted network.
+    uvicorn.run(app, host="0.0.0.0", port=58090, ws="websockets-sansio", forwarded_allow_ips="*")
 
 
 if __name__ == "__main__":
