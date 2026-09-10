@@ -15,19 +15,11 @@ without anyone hand-writing curl.
 | `submit_task`        | Submit a Gatling simulation to run, given a simulation class, jar URL, and javaOpts   |
 | `get_task_status`    | Get a task's current status (Started/Completed/Aborted, success, timestamps)         |
 | `get_console_log`    | Get the raw JVM/Gatling console output for a task - useful for diagnosing failures    |
-| `get_simulation_log` | Get Gatling's own simulation report for a completed task (see caveat below)          |
+| `get_simulation_log` | Get Gatling's own simulation report for a completed task (binary on recent Gatling versions - prefer `get_console_log`) |
 | `abort_task`         | Kill a currently running task                                                        |
 
-Every tool is also mounted as a plain REST route with the same name and arguments - `GET` for read-only tools
-(`get_task_status`, `get_console_log`, `get_simulation_log`), `POST` for anything that mutates state
-(`upload_jar`, `submit_task`, `abort_task`, e.g. `POST /submit_task?simulation=...&jar_url=...`) so those can't be
-triggered by a bare link/image tag. Useful for testing without an LLM in the loop.
-
-All routes - MCP and REST alike - require the `Authorization: Bearer <GATLING_MCP_API_TOKEN>` header described below.
-
-**Caveat:** `get_simulation_log` returns whatever `gatling-server`'s `/task/simulationLog/{taskId}` hands back. On
-recent Gatling versions that file is a binary format, not the classic text log - `get_console_log` is the more
-reliable source for diagnosing a run from an AI agent today.
+Every tool is also mounted as a plain REST route (`GET` for read-only tools, `POST` for anything that mutates
+state), and all routes require the `Authorization: Bearer <GATLING_MCP_API_TOKEN>` header described below.
 
 ## Project Structure
 
