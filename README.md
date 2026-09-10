@@ -76,6 +76,13 @@ Or use `./run-server.sh`, which sets the same defaults shown in the table above 
 haven't already set yourself (`GATLING_SERVER_URL`, `GATLING_SERVER_API_TOKEN`, `GATLING_MCP_API_TOKEN`,
 `GATLING_MCP_REQUEST_TIMEOUT`, `GATLING_MCP_UPLOAD_TIMEOUT`) before starting the server.
 
+### Run with Docker
+
+```bash
+docker build -t gatling-mcp-server .
+docker run -p 58090:58090 -e GATLING_SERVER_URL=http://host.docker.internal:58080 gatling-mcp-server
+```
+
 ### Install from a GitHub Release
 
 Each `v*` release publishes a wheel/sdist as release artifacts (see [Cutting a release](#cutting-a-release) below).
@@ -258,11 +265,4 @@ bytes through this server:
   `submit_task` alone, or accept that `upload_jar` only works for whoever is colocated with that gatling-mcp-server
   instance. Making `upload_jar` accept file bytes/base64 over MCP instead of a local path (removing the locality
   requirement entirely) is a possible future enhancement, not implemented today.
-
-### Run with Docker
-
-```bash
-docker build -t gatling-mcp-server .
-docker run -p 58090:58090 -e GATLING_SERVER_URL=http://host.docker.internal:58080 gatling-mcp-server
-```
 
