@@ -266,39 +266,3 @@ docker build -t gatling-mcp-server .
 docker run -p 58090:58090 -e GATLING_SERVER_URL=http://host.docker.internal:58080 gatling-mcp-server
 ```
 
-## Makefile Targets
-
-| Target          | Description                              |
-|------------------|--------------------------------------------|
-| `install-deps`   | Install Python dependencies                |
-| `image`          | Build Docker image                         |
-| `run`            | Run Docker container                       |
-| `run-shell`      | Start a shell in a new container           |
-| `exec-shell`     | Exec into a running container              |
-| `check`          | Run tests with pytest                      |
-| `clean`          | Remove generated files                     |
-| `up`             | Build and run (`check` + `image` + `run`)  |
-
-## CI/CD
-
-Two workflows:
-
-- [`build.yaml`](.github/workflows/build.yaml) - runs tests on every push to `main`, on pull requests, and on `v*`
-  tag pushes. On `main` and tag pushes (not PRs) it also builds and pushes a Docker image to both Docker Hub
-  (`jecklgamis/gatling-mcp-server`) and GHCR (`ghcr.io/jecklgamis/gatling-mcp-server`): `main` pushes update the
-  `:latest` tag, and `v*` tag pushes produce immutable semver tags (`v1.2.3` -> `1.2.3` and `1.2`) instead of a
-  floating branch tag.
-- [`release.yaml`](.github/workflows/release.yaml) - fires on the same `v*` tag pushes, builds the pip sdist/wheel
-  (`python -m build`), and creates a GitHub Release with auto-generated notes (`gh release create --generate-notes`)
-  with those files attached as release artifacts, marked as a pre-release if the tag contains a hyphen (e.g.
-  `v1.0.0-rc.1`).
-
-### Cutting a release
-
-```bash
-git tag v1.2.3
-git push origin v1.2.3
-```
-
-That single tag push is enough - `build.yaml` builds and pushes the versioned image, and `release.yaml` creates the
-GitHub Release page with notes, in parallel.
