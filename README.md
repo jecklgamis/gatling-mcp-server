@@ -38,11 +38,6 @@ state), and all routes require the `Authorization: Bearer <GATLING_MCP_API_TOKEN
 | `GATLING_MCP_REQUEST_TIMEOUT`  | Timeout (seconds) for lightweight calls (submit/status/logs/abort) | `30`                  |
 | `GATLING_MCP_UPLOAD_TIMEOUT`   | Timeout (seconds) for `upload_jar`, which can move tens of MB  | `300`                    |
 
-`GATLING_MCP_API_TOKEN` defaults to `"default"` for local dev convenience, but the server logs a warning on startup
-if it's left unset - **always set it explicitly before running this anywhere reachable beyond localhost.** Without
-it, anyone who can reach this server can invoke any tool using the credentials baked into its own environment,
-including `upload_jar` with an arbitrary local `file_path`.
-
 ### Run Locally
 
 ```bash
