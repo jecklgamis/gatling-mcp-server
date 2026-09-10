@@ -70,7 +70,7 @@ Once the server is running, register it as a project-scoped MCP server in any re
 
 ```bash
 cd /path/to/gatling-scala-example
-claude mcp add --transport http gatling http://localhost:58090/gatling_mcp -s project \
+claude mcp add --transport http gatling-mcp-server http://localhost:58090/gatling_mcp -s project \
   -H "Authorization: Bearer \${GATLING_MCP_API_TOKEN}"
 ```
 
@@ -79,7 +79,7 @@ This writes a `.mcp.json` in that repo:
 ```json
 {
   "mcpServers": {
-    "gatling": {
+    "gatling-mcp-server": {
       "type": "http",
       "url": "http://localhost:58090/gatling_mcp",
       "headers": {
@@ -93,7 +93,7 @@ This writes a `.mcp.json` in that repo:
 `${GATLING_MCP_API_TOKEN}` is expanded from your own shell environment at connect time, not stored literally - so
 `.mcp.json` itself contains no secret and is safe to commit and share with the team. Whoever opens Claude Code in
 that repo just needs `GATLING_MCP_API_TOKEN` set in their own environment; they're then prompted to trust/enable the
-`gatling` server automatically. Run `claude mcp list` to confirm it connects.
+`gatling-mcp-server` server automatically. Run `claude mcp list` to confirm it connects.
 
 Omit `-s project` (or use `-s user`) to register it in your personal config instead, if you'd rather it be available
 across every project rather than shared via the repo.
@@ -109,7 +109,7 @@ ones:
 ```json
 {
   "mcpServers": {
-    "gatling": {
+    "gatling-mcp-server": {
       "type": "http",
       "url": "http://localhost:58090/gatling_mcp",
       "headers": {
@@ -125,7 +125,7 @@ ones:
 ```json
 {
   "mcpServers": {
-    "gatling": {
+    "gatling-mcp-server": {
       "url": "http://localhost:58090/gatling_mcp",
       "headers": {
         "Authorization": "Bearer <GATLING_MCP_API_TOKEN>"
@@ -144,7 +144,7 @@ config), same shape as Cursor's above.
 ```json
 {
   "mcpServers": {
-    "gatling": {
+    "gatling-mcp-server": {
       "type": "streamableHttp",
       "url": "http://localhost:58090/gatling_mcp",
       "headers": {
@@ -162,7 +162,7 @@ SSE):
 ```json
 {
   "mcpServers": {
-    "gatling": {
+    "gatling-mcp-server": {
       "httpUrl": "http://localhost:58090/gatling_mcp",
       "headers": {
         "Authorization": "Bearer <GATLING_MCP_API_TOKEN>"
@@ -172,7 +172,7 @@ SSE):
 }
 ```
 
-or equivalently: `gemini mcp add --transport http gatling http://localhost:58090/gatling_mcp -H "Authorization: Bearer <GATLING_MCP_API_TOKEN>"`.
+or equivalently: `gemini mcp add --transport http gatling-mcp-server http://localhost:58090/gatling_mcp -H "Authorization: Bearer <GATLING_MCP_API_TOKEN>"`.
 
 **JetBrains AI Assistant** (IntelliJ IDEA, PyCharm, etc.) - Settings -> Tools -> AI Assistant -> Model Context
 Protocol (MCP) -> Add, then switch the dialog to "As JSON":
@@ -180,7 +180,7 @@ Protocol (MCP) -> Add, then switch the dialog to "As JSON":
 ```json
 {
   "mcpServers": {
-    "gatling": {
+    "gatling-mcp-server": {
       "url": "http://localhost:58090/gatling_mcp",
       "headers": {
         "Authorization": "Bearer <GATLING_MCP_API_TOKEN>"
