@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gatling-mcp-server"
+version = "0.1.0"
+description = "MCP server for submitting and monitoring Gatling load tests via gatling-server"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi==0.135.1",
+    "uvicorn==0.41.0",
+    "fastmcp==3.2.0",
+    "httpx==0.28.1",
+    "mcp==1.28.1",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest==9.0.3",
+    "pytest-asyncio==1.4.0",
+    "respx==0.22.0",
+]
+
+[project.scripts]
+gatling-mcp-server = "server.app:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["server"]

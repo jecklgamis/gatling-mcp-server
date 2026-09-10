@@ -32,11 +32,13 @@ reliable source for diagnosing a run from an AI agent today.
 ## Project Structure
 
 ```
-server.py                — FastAPI app entry point with REST routes and MCP mount
+server.py                — thin dev entry point (python server.py); delegates to server/app.py
 server/                  — MCP server definitions
+  app.py                 — FastAPI app: REST routes, MCP mount, and the `main()` used by the pip console script
   gatling_tools.py       — Gatling MCP server: tool definitions, calls gatling-server's HTTP API
 tests/                   — pytest tests for the tool functions (gatling-server calls mocked via respx)
 requirements.txt         — Python dependencies
+pyproject.toml            — pip package metadata (sdist/wheel built and attached to GitHub Releases)
 Dockerfile                — Container image definition
 Makefile                  — Build and run shortcuts
 ```
@@ -73,6 +75,22 @@ python server.py
 Or use `./run-server.sh`, which sets the same defaults shown in the table above for any of these env vars you
 haven't already set yourself (`GATLING_SERVER_URL`, `GATLING_SERVER_API_TOKEN`, `GATLING_MCP_API_TOKEN`,
 `GATLING_MCP_REQUEST_TIMEOUT`, `GATLING_MCP_UPLOAD_TIMEOUT`) before starting the server.
+
+### Install from a GitHub Release
+
+Each `v*` release publishes a wheel/sdist as release artifacts (see [Cutting a release](#cutting-a-release) below).
+Install the wheel directly from a release without cloning the repo:
+
+```bash
+pip install https://github.com/jecklgamis/gatling-mcp-server/releases/download/v1.2.3/gatling_mcp_server-1.2.3-py3-none-any.whl
+```
+
+This installs a `gatling-mcp-server` command on your `PATH`:
+
+```bash
+export GATLING_MCP_API_TOKEN=... GATLING_SERVER_URL=... GATLING_SERVER_API_TOKEN=...
+gatling-mcp-server
+```
 
 The server starts on `http://localhost:58090` with:
 - Root endpoint at `/` listing available endpoints
@@ -175,9 +193,10 @@ Two workflows:
   (`jecklgamis/gatling-mcp-server`) and GHCR (`ghcr.io/jecklgamis/gatling-mcp-server`): `main` pushes update the
   `:latest` tag, and `v*` tag pushes produce immutable semver tags (`v1.2.3` -> `1.2.3` and `1.2`) instead of a
   floating branch tag.
-- [`release.yaml`](.github/workflows/release.yaml) - fires on the same `v*` tag pushes and creates a GitHub Release
-  with auto-generated notes (`gh release create --generate-notes`), marked as a pre-release if the tag contains a
-  hyphen (e.g. `v1.0.0-rc.1`).
+- [`release.yaml`](.github/workflows/release.yaml) - fires on the same `v*` tag pushes, builds the pip sdist/wheel
+  (`python -m build`), and creates a GitHub Release with auto-generated notes (`gh release create --generate-notes`)
+  with those files attached as release artifacts, marked as a pre-release if the tag contains a hyphen (e.g.
+  `v1.0.0-rc.1`).
 
 ### Cutting a release
 
