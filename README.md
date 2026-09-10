@@ -21,20 +21,6 @@ without anyone hand-writing curl.
 Every tool is also mounted as a plain REST route (`GET` for read-only tools, `POST` for anything that mutates
 state), and all routes require the `Authorization: Bearer <GATLING_MCP_API_TOKEN>` header described below.
 
-## Project Structure
-
-```
-server.py                — thin dev entry point (python server.py); delegates to server/app.py
-server/                  — MCP server definitions
-  app.py                 — FastAPI app: REST routes, MCP mount, and the `main()` used by the pip console script
-  gatling_tools.py       — Gatling MCP server: tool definitions, calls gatling-server's HTTP API
-tests/                   — pytest tests for the tool functions (gatling-server calls mocked via respx)
-requirements.txt         — Python dependencies
-pyproject.toml            — pip package metadata (sdist/wheel built and attached to GitHub Releases)
-Dockerfile                — Container image definition
-Makefile                  — Build and run shortcuts
-```
-
 ## Getting Started
 
 ### Requirements
