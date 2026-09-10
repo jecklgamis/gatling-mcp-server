@@ -81,14 +81,14 @@ ingress:
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-buffering: "off"
   hosts:
-    - host: gatling-mcp-server.jecklgamis.com
+    - host: gatling-mcp.jecklgamis.com
       paths:
         - path: /
           pathType: Prefix
   tls:
     - secretName: gatling-mcp-server-tls
       hosts:
-        - gatling-mcp-server.jecklgamis.com
+        - gatling-mcp.jecklgamis.com
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious

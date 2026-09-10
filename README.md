@@ -70,7 +70,7 @@ helm install gatling-mcp-server ./chart \
   --set gatlingServerApiToken=<token>
 ```
 
-By default it deploys behind an nginx Ingress with cert-manager TLS at `gatling-mcp-server.jecklgamis.com`, and
+By default it deploys behind an nginx Ingress with cert-manager TLS at `gatling-mcp.jecklgamis.com`, and
 points `GATLING_SERVER_URL` at `http://gatling-server` (the in-cluster Service name a sibling `gatling-server` Helm
 release produces) - override `gatlingServerUrl` if that instance lives elsewhere. See `values.yaml` for all options.
 
