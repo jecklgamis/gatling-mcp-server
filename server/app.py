@@ -2,12 +2,18 @@ import hmac
 import logging
 import os
 from contextlib import asynccontextmanager
+from importlib.metadata import PackageNotFoundError, version
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 from server.gatling_tools import gatling_tools, mcp
+
+try:
+    __version__ = version("gatling-mcp-server")
+except PackageNotFoundError:
+    __version__ = "0.0.0-dev"
 
 logger = logging.getLogger("gatling_mcp_server")
 
@@ -37,7 +43,7 @@ async def lifespan(app):
 app = FastAPI(
     title="Gatling MCP Server",
     description="MCP server for submitting and monitoring Gatling load tests via gatling-server",
-    version="0.1.0",
+    version=__version__,
     lifespan=lifespan,
 )
 

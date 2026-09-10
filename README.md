@@ -51,8 +51,12 @@ Or `./run-server.sh`, which applies the defaults from the table above.
 
 ```bash
 docker build -t gatling-mcp-server .
-docker run -p 58090:58090 -e GATLING_SERVER_URL=http://host.docker.internal:58080 gatling-mcp-server
+docker run -p 58090:58090 --add-host=host.docker.internal:host-gateway \
+  -e GATLING_SERVER_URL=http://host.docker.internal:58080 gatling-mcp-server
 ```
+
+`--add-host` is required on Linux for `host.docker.internal` to resolve; Docker Desktop (Mac/Windows) provides it
+automatically and the flag is a harmless no-op there.
 
 ### Install from a GitHub Release
 
